@@ -38,7 +38,7 @@
 <h3>{l s='Cryptocurrency payment.' mod='cryptocurrency'}</h3>
 <form action="{$link->getModuleLink('cryptocurrency', 'validation', [], true)|escape:'html'}" method="post">
 <p>
-	<img src="{$this_path_bw}cryptocurrency.png" alt="{l s='Cryptocurrency' mod='cryptocurrency'}" width="86" height="49" style="float:left; margin: 0px 10px 5px 0px;" />
+	<img src="{$this_path_bw}cryptocurrency.jpg" alt="{l s='Cryptocurrency' mod='cryptocurrency'}" width="86" height="49" style="float:left; margin: 0px 10px 5px 0px;" />
 	{l s='You have chosen to pay with a cryptocurrency transaction.' mod='cryptocurrency'}
 	<br/><br />
 	{l s='Here is a short summary of your order:' mod='cryptocurrency'}

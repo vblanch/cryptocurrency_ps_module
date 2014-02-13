@@ -25,7 +25,7 @@
 
 <p class="payment_module">
 	<a href="{$link->getModuleLink('cryptocurrency', 'payment')|escape:'html'}" title="{l s='Pay with a cryptocurrency' mod='cryptocurrency'}">
-		<img src="{$this_path_bw}cryptocurrency.png" alt="{l s='Pay with a cryptocurrency transaction' mod='cryptocurrency'}" width="86" height="49"/>
+		<img src="{$this_path_bw}cryptocurrency.jpg" alt="{l s='Pay with a cryptocurrency transaction' mod='cryptocurrency'}" width="86" height="49"/>
 		{l s='Pay with a cryptocurrency (order process will be longer)' mod='cryptocurrency'}
 	</a>
 </p>

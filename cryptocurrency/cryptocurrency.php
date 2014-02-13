@@ -220,7 +220,7 @@ class CryptoCurrency extends PaymentModule
 
 	private function _displayCryptoCurrency()
 	{
-		$this->_html .= '<img src="../modules/cryptocurrency/cryptocurrency.png" style="float:left; margin-right:15px;" width="86" height="49"><b>'.$this->l('This module allows you to accept secure payments by Cryptocurrency cryptocurrency.').'</b><br /><br />
+		$this->_html .= '<img src="../modules/cryptocurrency/cryptocurrency.jpg" style="float:left; margin-right:15px;" width="86" height="49"><b>'.$this->l('This module allows you to accept secure payments by Cryptocurrency cryptocurrency.').'</b><br /><br />
 		'.$this->l('If the client chooses to pay with a cryptocurrency transaction, the order\'s status will change to "Waiting for Payment."').'<br />
 		'.$this->l('That said, you must manually confirm the order upon receiving the Cryptocurrency transaction. ').'<br /><br /><br />';
 	}
