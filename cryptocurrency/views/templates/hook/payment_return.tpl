@@ -28,9 +28,9 @@
 		<br /><br />
 		{l s='Please send us a Cryptocurrency transaction with' mod='cryptocurrency'}
 		<br /><br />- {l s='Amount' mod='cryptocurrency'} <span class="price"> <strong>{$total_to_pay}</strong></span>
-		<br /><br />- {l s='Name of account owner' mod='cryptocurrency'}  <strong>{if $cryptocurrencyOwner}{$cryptocurrencyOwner}{else}___________{/if}</strong>
+		<br /><br />- {l s='Name of wallet owner' mod='cryptocurrency'}  <strong>{if $cryptocurrencyOwner}{$cryptocurrencyOwner}{else}___________{/if}</strong>
 		<br /><br />- {l s='Include these details' mod='cryptocurrency'}  <strong>{if $cryptocurrencyDetails}{$cryptocurrencyDetails}{else}___________{/if}</strong>
-		<br /><br />- {l s='Cryptocurrency address' mod='cryptocurrency'}  <strong>{if $cryptocurrencyAddress}{$cryptocurrencyAddress}{else}___________{/if}</strong>
+		<br /><br />- {l s='Cryptocurrency wallet address' mod='cryptocurrency'}  <strong>{if $cryptocurrencyAddress}{$cryptocurrencyAddress}{else}___________{/if}</strong>
 		{if !isset($reference)}
 			<br /><br />- {l s='Do not forget to insert your order number #%d in the subject of your Cryptocurrency transaction' sprintf=$id_order mod='cryptocurrency'}
 		{else}

@@ -56,14 +56,13 @@ class CryptocurrencyValidationModuleFrontController extends ModuleFrontControlle
 		$currency = $this->context->currency;
 		$total = (float)$cart->getOrderTotal(true, Cart::BOTH);
 		$mailVars = array(
-			'{wallet_owner}' => Configuration::get('CRYPTOCURRENCY_WIRE_OWNER'),
-			'{wallet_details}' => nl2br(Configuration::get('CRYPTOCURRENCY_WIRE_DETAILS')),
-			'{wallet_address}' => nl2br(Configuration::get('CRYPTOCURRENCY_WIRE_ADDRESS'))
+			'{wallet_owner}' => Configuration::get('CRYPTO_CURRENCY_OWNER'),
+			'{wallet_details}' => nl2br(Configuration::get('CRYPTO_CURRENCY_DETAILS')),
+			'{wallet_address}' => nl2br(Configuration::get('CRYPTO_CURRENCY_ADDRESS'))
 		);
 
 		//$this->module->validateOrder($cart->id, Configuration::get('PS_OS_BANKWIRE'), $total, $this->module->displayName, NULL, $mailVars, (int)$currency->id, false, $customer->secure_key);
 		$this->module->validateOrder($cart->id, Configuration::get('PS_OS_CRYPTOCURRENCY'), $total, $this->module->displayName, NULL, $mailVars, (int)$currency->id, false, $customer->secure_key);
-		//send email here
 		Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.$this->module->id.'&id_order='.$this->module->currentOrder.'&key='.$customer->secure_key);
 	}
 }

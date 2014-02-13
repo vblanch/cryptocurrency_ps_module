@@ -66,14 +66,14 @@ class CryptoCurrency extends PaymentModule
 		$this->description = $this->l('Accept payments for your products via Cryptocurrency cryptocurrency.');
 		$this->confirmUninstall = $this->l('Are you sure about removing these details?');
 		if (!isset($this->owner) || !isset($this->details) || !isset($this->address))
-			$this->warning = $this->l('Account owner and account details must be configured before using this module.');
+			$this->warning = $this->l('Wallet owner and wallet details must be configured before using this module.');
 		if (!count(Currency::checkPaymentCurrencies($this->id)))
 			$this->warning = $this->l('No currency has been set for this module.');
 
 		$this->extra_mail_vars = array(
-										'{cryptocurrency_owner}' => Configuration::get('CRYPTO_CURRENCY_OWNER'),
-										'{cryptocurrency_details}' => nl2br(Configuration::get('CRYPTO_CURRENCY_DETAILS')),
-										'{cryptocurrency_address}' => nl2br(Configuration::get('CRYPTO_CURRENCY_ADDRESS'))
+										'{wallet_owner}' => Configuration::get('CRYPTO_CURRENCY_OWNER'),
+										'{wallet_details}' => nl2br(Configuration::get('CRYPTO_CURRENCY_DETAILS')),
+										'{wallet_address}' => nl2br(Configuration::get('CRYPTO_CURRENCY_ADDRESS'))
 										);
 										
 		/* For 1.4.3 and less compatibility */
@@ -121,7 +121,7 @@ class CryptoCurrency extends PaymentModule
 					INSERT IGNORE INTO `'._DB_PREFIX_.'order_state_lang` (`id_order_state`, `id_lang`, `name`, `template`) VALUES
 					(14, '.$result['id_lang'].', \'Awaiting cryptocurrency transaction\', \'cryptocurrency\')');
 		
-		//update "condition" table
+		//update "condition" table: set the same condition as bankwire or cheque for cryptocurrency
 		$return2 = Db::getInstance()->Execute('
 			UPDATE IGNORE `'._DB_PREFIX_.'condition` 
 			SET `request` = REPLACE (
@@ -201,9 +201,9 @@ class CryptoCurrency extends PaymentModule
 		if (Tools::isSubmit('btnSubmit'))
 		{
 			if (!Tools::getValue('details'))
-				$this->_postErrors[] = $this->l('Account details are required.');
+				$this->_postErrors[] = $this->l('Wallet details are required.');
 			elseif (!Tools::getValue('owner'))
-				$this->_postErrors[] = $this->l('Account owner is required.');
+				$this->_postErrors[] = $this->l('Wallet owner is required.');
 		}
 	}
 
@@ -221,7 +221,7 @@ class CryptoCurrency extends PaymentModule
 	private function _displayCryptoCurrency()
 	{
 		$this->_html .= '<img src="../modules/cryptocurrency/cryptocurrency.png" style="float:left; margin-right:15px;" width="86" height="49"><b>'.$this->l('This module allows you to accept secure payments by Cryptocurrency cryptocurrency.').'</b><br /><br />
-		'.$this->l('If the client chooses to pay by Cryptocurrency, the order\'s status will change to "Waiting for Payment."').'<br />
+		'.$this->l('If the client chooses to pay with a cryptocurrency transaction, the order\'s status will change to "Waiting for Payment."').'<br />
 		'.$this->l('That said, you must manually confirm the order upon receiving the Cryptocurrency transaction. ').'<br /><br /><br />';
 	}
 
@@ -232,8 +232,8 @@ class CryptoCurrency extends PaymentModule
 			<fieldset>
 			<legend><img src="../img/admin/contact.gif" />'.$this->l('Contact details').'</legend>
 				<table border="0" width="500" cellpadding="0" cellspacing="0" id="form">
-					<tr><td colspan="2">'.$this->l('Please specify the Cryptocurrency account details for customers.').'.<br /><br /></td></tr>
-					<tr><td width="130" style="height: 35px;">'.$this->l('Account owner').'</td><td><input type="text" name="owner" value="'.htmlentities(Tools::getValue('owner', $this->owner), ENT_COMPAT, 'UTF-8').'" style="width: 300px;" /></td></tr>
+					<tr><td colspan="2">'.$this->l('Please specify the cryptocurrency wallet details for customers.').'.<br /><br /></td></tr>
+					<tr><td width="130" style="height: 35px;">'.$this->l('Wallet owner').'</td><td><input type="text" name="owner" value="'.htmlentities(Tools::getValue('owner', $this->owner), ENT_COMPAT, 'UTF-8').'" style="width: 300px;" /></td></tr>
 					<tr>
 						<td width="130" style="vertical-align: top;">'.$this->l('Details').'</td>
 						<td style="padding-bottom:15px;">
