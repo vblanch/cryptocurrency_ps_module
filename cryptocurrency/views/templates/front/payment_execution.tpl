@@ -58,9 +58,7 @@
 		{l s='Choose one of the following:' mod='cryptocurrency'}
 		<select id="currency_payement" name="currency_payement" onchange="setCurrency($('#currency_payement').val());">
 			{foreach from=$currencies item=currency}
-				{if $currency.name|lower == "cryptocurrency"} {* || $currency.name|lower == "doge" or bitcoin or... *}
-					<option value="{$currency.id_currency}" {if $currency.id_currency == $cust_currency}selected="selected"{/if}>{$currency.name}</option>
-				{/if}
+				<option value="{$currency.id_currency}" {if $currency.id_currency == $cust_currency}selected="selected"{/if}>{$currency.name}</option>
 			{/foreach}
 		</select>
 	{else}

@@ -47,7 +47,7 @@ class CryptoCurrency extends PaymentModule
 		$this->name = 'cryptocurrency';
 		$this->tab = 'payments_gateways';
 		$this->version = '0.6';
-		$this->author = 'PrestaShop';
+		$this->author = 'PrestaShop & Victor Blanch';
 		
 		$this->currencies = true;
 		$this->currencies_mode = 'checkbox';
@@ -220,9 +220,9 @@ class CryptoCurrency extends PaymentModule
 
 	private function _displayCryptoCurrency()
 	{
-		$this->_html .= '<img src="../modules/cryptocurrency/cryptocurrency.jpg" style="float:left; margin-right:15px;" width="86" height="49"><b>'.$this->l('This module allows you to accept secure payments by Cryptocurrency cryptocurrency.').'</b><br /><br />
+		$this->_html .= '<img src="../modules/cryptocurrency/cryptocurrency.jpg" style="float:left; margin-right:15px;" width="86" height="49"><b>'.$this->l('This module allows you to accept payments by cryptocurrency transactions.').'</b><br /><br />
 		'.$this->l('If the client chooses to pay with a cryptocurrency transaction, the order\'s status will change to "Waiting for Payment."').'<br />
-		'.$this->l('That said, you must manually confirm the order upon receiving the Cryptocurrency transaction. ').'<br /><br /><br />';
+		'.$this->l('That said, you must manually confirm the order upon receiving the cryptocurrency transaction. ').'<br /><br /><br />';
 	}
 
 	private function _displayForm()
@@ -243,13 +243,13 @@ class CryptoCurrency extends PaymentModule
 					</tr>
 					<!--
 					<tr>
-						<td width="130" style="vertical-align: top;">'.$this->l('Cryptocurrency address').'</td>
+						<td width="130" style="vertical-align: top;">'.$this->l('Cryptocurrency wallet address').'</td>
 						<td style="padding-bottom:15px;">
 							<textarea name="address" rows="4" cols="53">'.htmlentities(Tools::getValue('address', $this->address), ENT_COMPAT, 'UTF-8').'</textarea>
 						</td>
 					</tr>
 					-->
-					<tr><td width="130" style="height: 35px;">'.$this->l('Cryptocurrency address').'</td><td><input type="text" name="address" value="'.htmlentities(Tools::getValue('address', $this->address), ENT_COMPAT, 'UTF-8').'" style="width: 300px;" /></td></tr>
+					<tr><td width="130" style="height: 35px;">'.$this->l('Cryptocurrency wallet address').'</td><td><input type="text" name="address" value="'.htmlentities(Tools::getValue('address', $this->address), ENT_COMPAT, 'UTF-8').'" style="width: 300px;" /></td></tr>
 					
 					<tr><td colspan="2" align="center"><input class="button" name="btnSubmit" value="'.$this->l('Update settings').'" type="submit" /></td></tr>
 				</table>
