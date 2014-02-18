@@ -41,9 +41,14 @@ class CryptoCurrency extends PaymentModule
 	public $details;
 	public $owner;
 	public $address;
+	public $id_currency;	//new, stores id of current currency used (it's lost otherwise!)
 	public $extra_mail_vars;
 	public function __construct()
 	{
+	
+		$logger = new FileLogger(0); //0 == nivell de debug. Sense això logDebug() no funciona.
+		$logger->setFilename(_PS_ROOT_DIR_.'/log/debug.log');
+		
 		$this->name = 'cryptocurrency';
 		$this->tab = 'payments_gateways';
 		$this->version = '0.6';
@@ -51,37 +56,100 @@ class CryptoCurrency extends PaymentModule
 		
 		$this->currencies = true;
 		$this->currencies_mode = 'checkbox';
-
-		$config = Configuration::getMultiple(array('CRYPTO_CURRENCY_DETAILS', 'CRYPTO_CURRENCY_OWNER', 'CRYPTO_CURRENCY_ADDRESS'));
+ 
+		$config = Configuration::getMultiple(array('CRYPTO_CURRENCY_DETAILS', 'CRYPTO_CURRENCY_OWNER', 'CRYPTO_CURRENCY_ADDRESS', 'CRYPTO_CURRENCY_ID_CURRENCY', 'CRYPTO_CURRENCY_NAME_CURRENCY'));
 		if (isset($config['CRYPTO_CURRENCY_OWNER']))
 			$this->owner = $config['CRYPTO_CURRENCY_OWNER'];
 		if (isset($config['CRYPTO_CURRENCY_DETAILS']))
 			$this->details = $config['CRYPTO_CURRENCY_DETAILS'];
-		if (isset($config['CRYPTO_CURRENCY_ADDRESS']))
-			$this->address = $config['CRYPTO_CURRENCY_ADDRESS'];
-
-		parent::__construct();
-
+		if (isset($config['CRYPTO_CURRENCY_ADDRESS'])){
+			//format of addreses string: 1|ADDRESSOFBTC,2|ADDRESSOFLTC ... etc
+			$sub_addresses = explode(',', $config['CRYPTO_CURRENCY_ADDRESS']);
+			if(is_array($sub_addresses)){
+				foreach($sub_addresses as $sub){
+					$items = explode('|', $sub);
+					$this->address[$items[0]] = $items[1];
+				}
+			}
+		}
+		
+		$logger->logDebug("1. current address array at the beginning: ".var_export($this->address, true));
+		
+		parent::__construct(); 
+		
+		//no context before parent::_constuct()!
+		$currency = $this->context->currency;		
+		
+		//$cart = $this->context->cart; //context exists, so we can get currency directly
+		$logger->logDebug("1.5. current cart id currency: ".$cart->id_currency/*var_export($this->address, true)*/);
+		//$logger->logDebug("1.7. current context: ".var_export($this->context, true));
+		
+		//update if there is a valid value in the currency 		
+		$logger->logDebug("2. currency id set in constructor to (before): ".$currency->id);
+		$logger->logDebug("3. currency id stored in config in constructor (before): ".$config['CRYPTO_CURRENCY_ID_CURRENCY']);
+		if(isset($currency->id) && $currency->id!='' && $currency->id!=null && $currency->id!=false){
+			Configuration::updateValue('CRYPTO_CURRENCY_ID_CURRENCY', $currency->id);
+			Configuration::updateValue('CRYPTO_CURRENCY_NAME_CURRENCY', $currency->name);
+			$this->id_currency = $config['CRYPTO_CURRENCY_ID_CURRENCY'];
+			//save name also so we have it!
+			$this->name_currency = $config['CRYPTO_CURRENCY_NAME_CURRENCY'];	// //DEFINE NAME_CURRENCY
+			//$logger->logDebug("4. currency id set in constructor to: ".$currency->id);
+		}		
+		
+		$logger->logDebug("5. currency id set in constructor to (after): ".$currency->id);
+		$logger->logDebug("6. currency id stored in config in constructor (after): ".$config['CRYPTO_CURRENCY_ID_CURRENCY']);
+		
 		$this->displayName = $this->l('Cryptocurrency');
 		$this->description = $this->l('Accept payments for your products via Cryptocurrency cryptocurrency.');
 		$this->confirmUninstall = $this->l('Are you sure about removing these details?');
 		if (!isset($this->owner) || !isset($this->details) || !isset($this->address))
 			$this->warning = $this->l('Wallet owner and wallet details must be configured before using this module.');
 		if (!count(Currency::checkPaymentCurrencies($this->id)))
-			$this->warning = $this->l('No currency has been set for this module.');
-
+			$this->warning = $this->l('No currency has been set for this module.'); 
+		
+		$current_address = $this->address[$config['CRYPTO_CURRENCY_ID_CURRENCY']];		
+		$current_currency_name = $config['CRYPTO_CURRENCY_NAME_CURRENCY'];
+		
+		$logger->logDebug("7. current address array before extra mail vars ".var_export($this->address, true));
+		$logger->logDebug("8. current address before extra mail vars: : ".$current_address);
+		
+		//get currencies attached to the module
+		//$cart = $this->context->cart;
+		//$currencies_module = $this->getCurrency((int)$cart->id_currency);
+			
+		//$current_currency_name=$this->l('Not available');
+		/*
+		foreach ($currencies_module as $currency_module){ 
+			$logger->logDebug("Currency of module structure".var_export($currency_module, true));
+			$logger->logDebug("currency_module['id_currency']: ".$currency_module['id_currency']);			
+			$logger->logDebug("config['CRYPTO_CURRENCY_ID_CURRENCY']: ".$config['CRYPTO_CURRENCY_ID_CURRENCY']);			
+			if ($currency_module['id_currency']==$config['CRYPTO_CURRENCY_ID_CURRENCY']){
+				$current_currency_name = $currency_module['name'];
+			}
+		}		
+		*/
+		//$current_currency_name = Currency::getCurrencies()[$config['CRYPTO_CURRENCY_ID_CURRENCY']];
+		
+		
+		//$logger->logDebug("CURRENCY NAME: ".var_export($current_currency_name, true)); 
+		$logger->logDebug("9. CURRENCY NAME: ".var_export($current_currency_name, true));		 	
+		   
 		$this->extra_mail_vars = array(
-										'{wallet_owner}' => Configuration::get('CRYPTO_CURRENCY_OWNER'),
-										'{wallet_details}' => nl2br(Configuration::get('CRYPTO_CURRENCY_DETAILS')),
-										'{wallet_address}' => nl2br(Configuration::get('CRYPTO_CURRENCY_ADDRESS'))
-										);
-										
+			'{wallet_owner}' => Configuration::get('CRYPTO_CURRENCY_OWNER'),
+			'{wallet_details}' => nl2br(Configuration::get('CRYPTO_CURRENCY_DETAILS')),
+			//'{wallet_address}' => /*nl2br(Configuration::get('CRYPTO_CURRENCY_ADDRESS'))*/ 'this is main cryptocurrency php file'
+			//'{wallet_address}' => nl2br(Configuration::get('CRYPTO_CURRENCY_ADDRESS')[$currency->id])
+			'{wallet_currency_name}' => $current_currency_name,
+			'{wallet_address}' => $current_address
+			//'{wallet_address}' => nl2br(strval($currency->id).Configuration::get('CRYPTO_CURRENCY_ADDRESS')[strval($currency->id)])
+		); 
+		  
 		/* For 1.4.3 and less compatibility */
 		$updateConfig = array('PS_OS_CHEQUE', 'PS_OS_PAYMENT', 'PS_OS_PREPARATION', 'PS_OS_SHIPPING', 'PS_OS_CANCELED', 'PS_OS_REFUND', 'PS_OS_ERROR', 'PS_OS_OUTOFSTOCK', 'PS_OS_BANKWIRE', 'PS_OS_PAYPAL', 'PS_OS_WS_PAYMENT', 'PS_OS_CRYPTOCURRENCY');
 		if (!Configuration::get('PS_OS_PAYMENT'))
 			foreach ($updateConfig as $u)
 				if (!Configuration::get($u) && defined('_'.$u.'_'))
-					Configuration::updateValue($u, constant('_'.$u.'_'));										
+					Configuration::updateValue($u, constant('_'.$u.'_'));		 								
 										
 	}
 
@@ -191,6 +259,8 @@ class CryptoCurrency extends PaymentModule
 		if (!Configuration::deleteByName('CRYPTO_CURRENCY_DETAILS')
 				|| !Configuration::deleteByName('CRYPTO_CURRENCY_OWNER')
 				|| !Configuration::deleteByName('CRYPTO_CURRENCY_ADDRESS')
+				|| !Configuration::deleteByName('CRYPTO_CURRENCY_ID_CURRENCY')
+				|| !Configuration::deleteByName('CRYPTO_CURRENCY_NAME_CURRENCY')
 				|| !parent::uninstall())
 			return false;
 		return true;
@@ -213,7 +283,20 @@ class CryptoCurrency extends PaymentModule
 		{
 			Configuration::updateValue('CRYPTO_CURRENCY_DETAILS', Tools::getValue('details'));
 			Configuration::updateValue('CRYPTO_CURRENCY_OWNER', Tools::getValue('owner'));
-			Configuration::updateValue('CRYPTO_CURRENCY_ADDRESS', Tools::getValue('address'));
+			
+			$crypto_addresses = array();			
+			$cart = $this->context->cart;
+			$currencies_module = $this->getCurrency((int)$cart->id_currency);			
+			
+			foreach ($currencies_module as $currency_module){
+				$caddress_id = $currency_module['id_currency'];
+				$caddress    = Tools::getValue('address_'.$currency_module['id_currency']);
+				$crypto_addresses[]= $caddress_id.'|'.$caddress;
+			}
+			Configuration::updateValue('CRYPTO_CURRENCY_ADDRESS', implode(',', $crypto_addresses));						
+			//print_r("result of implode:\n<br/>");
+			//print_r(implode(',', $crypto_addresses));
+			//print_r("<br/>/result of implode:\n<br/>");
 		}
 		$this->_html .= '<div class="conf confirm"> '.$this->l('Settings updated').'</div>';
 	}
@@ -227,6 +310,10 @@ class CryptoCurrency extends PaymentModule
 
 	private function _displayForm()
 	{
+		//get currencies attached to the module
+		$cart = $this->context->cart;
+		$currencies_module = $this->getCurrency((int)$cart->id_currency);
+		
 		$this->_html .=
 		'<form action="'.Tools::htmlentitiesUTF8($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset>
@@ -240,17 +327,15 @@ class CryptoCurrency extends PaymentModule
 							<textarea name="details" rows="4" cols="53">'.htmlentities(Tools::getValue('details', $this->details), ENT_COMPAT, 'UTF-8').'</textarea>
 							<p>'.$this->l('Such as additional messages or instructions...').'</p>
 						</td>
-					</tr>
-					<!--
-					<tr>
-						<td width="130" style="vertical-align: top;">'.$this->l('Cryptocurrency wallet address').'</td>
-						<td style="padding-bottom:15px;">
-							<textarea name="address" rows="4" cols="53">'.htmlentities(Tools::getValue('address', $this->address), ENT_COMPAT, 'UTF-8').'</textarea>
-						</td>
-					</tr>
-					-->
-					<tr><td width="130" style="height: 35px;">'.$this->l('Cryptocurrency wallet address').'</td><td><input type="text" name="address" value="'.htmlentities(Tools::getValue('address', $this->address), ENT_COMPAT, 'UTF-8').'" style="width: 300px;" /></td></tr>
+					</tr>';
 					
+					foreach ($currencies_module as $currency_module){
+						$this->_html .='
+						<tr><td width="130" style="height: 35px;">'.$this->l('Wallet address for').' '.$currency_module['name'].'</td><td><input type="text" name="address_'.$currency_module['id_currency'].'" value="'.htmlentities(Tools::getValue('address_'.$currency_module['id_currency'], $this->address[$currency_module['id_currency']]), ENT_COMPAT, 'UTF-8').'" style="width: 300px;" /></td></tr>
+						';
+					}
+		$this->_html .='
+		
 					<tr><td colspan="2" align="center"><input class="button" name="btnSubmit" value="'.$this->l('Update settings').'" type="submit" /></td></tr>
 				</table>
 			</fieldset>
@@ -303,11 +388,15 @@ class CryptoCurrency extends PaymentModule
 		$state = $params['objOrder']->getCurrentState();
 		//if ($state == Configuration::get('PS_OS_BANKWIRE') || $state == Configuration::get('PS_OS_OUTOFSTOCK'))
 		if ($state == Configuration::get('PS_OS_CRYPTOCURRENCY') || $state == Configuration::get('PS_OS_OUTOFSTOCK'))
-		{
+		{		
+			$currency = $this->context->currency;					
 			$this->smarty->assign(array(
 				'total_to_pay' => Tools::displayPrice($params['total_to_pay'], $params['currencyObj'], false),
 				'cryptocurrencyDetails' => Tools::nl2br($this->details),
-				'cryptocurrencyAddress' => Tools::nl2br($this->address),
+				//'cryptocurrencyAddress' => Tools::nl2br($this->address),
+				//(('cryptocurrencyAddress' => Tools::nl2br($currency->id.' '.$this->address.' '.var_export($this->address, true).' '.$currency_address), 
+				'cryptocurrencyName' => Tools::nl2br($currency->name),
+				'cryptocurrencyAddress' => Tools::nl2br($this->address[$currency->id]),
 				'cryptocurrencyOwner' => $this->owner,
 				'status' => 'ok',
 				'id_order' => $params['objOrder']->id
