@@ -1,0 +1,11 @@
+fieldset{
+	margin-top:10px;
+}
+
+.fieldset-credits, .fieldset-donate {
+  text-align: center;
+}
+
+.fieldset-credits p:first-child, .fieldset-donate  p:first-child{
+	margin-top: 0;
+}

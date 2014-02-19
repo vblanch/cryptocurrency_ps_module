@@ -56,38 +56,10 @@ class CryptocurrencyValidationModuleFrontController extends ModuleFrontControlle
 		$currency = $this->context->currency;
 		$total = (float)$cart->getOrderTotal(true, Cart::BOTH);
 		
-		//find out the correct wallet address
-		/*
-		$sub_addresses = explode(',', Configuration::get('CRYPTO_CURRENCY_ADDRESS'));
-		$address_list=array();
-		if(is_array($sub_addresses)){
-			foreach($sub_addresses as $sub){
-				$items = explode('|', $sub);
-				$address_list[$items[0]] = $items[1];
-			}
-		}
-		$currency_address = $address_list[$currency->id];
-		if(!$currency_address || $currency_address =='')
-			$currency_address = $this->l('Not available');
-			
-		//print_r($currency_address); 
-		*/
-		/*
-		$logger = new FileLogger(0); //0 == nivell de debug. Sense això logDebug() no funciona.
-		$logger->setFilename(_PS_ROOT_DIR_.'/log/debug.log');
-		$logger->logDebug("currency address id:".$currency->id);
-		$logger->logDebug("currency address list:".$address_list); 
-		$logger->logDebug("currency address:".$currency_address);
-		$logger->logDebug("currency address var export:".var_export($currency_address, true));
-		*/
-		//print_r($currency_address); 
-		
 		$mailVars = array(
 			'{wallet_owner}' => Configuration::get('CRYPTO_CURRENCY_OWNER'),
 			'{wallet_details}' => nl2br(Configuration::get('CRYPTO_CURRENCY_DETAILS')),
 			'{wallet_address}' => nl2br(Configuration::get('CRYPTO_CURRENCY_ADDRESS')[$currency->id])
-			//'{wallet_address}' => nl2br($currency_address)
-			//'{wallet_address}' => nl2br(Configuration::get('CRYPTO_CURRENCY_ADDRESS'))
 		);
 
 		//$this->module->validateOrder($cart->id, Configuration::get('PS_OS_BANKWIRE'), $total, $this->module->displayName, NULL, $mailVars, (int)$currency->id, false, $customer->secure_key);
