@@ -53,7 +53,14 @@ class CryptoCurrency extends PaymentModule
 		$this->currencies = true;
 		$this->currencies_mode = 'checkbox';
  
-		$config = Configuration::getMultiple(array('CRYPTO_CURRENCY_DETAILS', 'CRYPTO_CURRENCY_OWNER', 'CRYPTO_CURRENCY_ADDRESS', 'CRYPTO_CURRENCY_ID_CURRENCY', 'CRYPTO_CURRENCY_NAME_CURRENCY'));
+		$config = Configuration::getMultiple(array
+			('CRYPTO_CURRENCY_DETAILS', 
+			'CRYPTO_CURRENCY_OWNER', 
+			'CRYPTO_CURRENCY_ADDRESS', 
+			'CRYPTO_CURRENCY_ID_CURRENCY', 
+			'CRYPTO_CURRENCY_NAME_CURRENCY', 
+			'CRYPTO_CURRENCY_UPDATE_BTC'));
+			
 		if (isset($config['CRYPTO_CURRENCY_OWNER']))
 			$this->owner = $config['CRYPTO_CURRENCY_OWNER'];
 		if (isset($config['CRYPTO_CURRENCY_DETAILS']))
@@ -112,7 +119,10 @@ class CryptoCurrency extends PaymentModule
 
 	public function install()
 	{
-		if (!parent::install() || !$this->registerHook('payment') || !$this->registerHook('paymentReturn'))
+		if (!parent::install() 
+		|| !$this->registerHook('payment') 
+		|| !$this->registerHook('paymentReturn')
+		|| !$this->registerHook('header'))
 			return false;
 		
 		//register module in hook table
@@ -235,9 +245,10 @@ class CryptoCurrency extends PaymentModule
 		if (Tools::isSubmit('btnSubmit'))
 		{
 			Configuration::updateValue('CRYPTO_CURRENCY_DETAILS', Tools::getValue('details'));
-			Configuration::updateValue('CRYPTO_CURRENCY_OWNER', Tools::getValue('owner'));
+			Configuration::updateValue('CRYPTO_CURRENCY_OWNER', Tools::getValue('owner'));			
+			Configuration::updateValue('CRYPTO_CURRENCY_UPDATE_BTC', Tools::getValue('update_btc'));
 			
-			$crypto_addresses = array();			
+			$crypto_addresses = array();
 			$cart = $this->context->cart;
 			$currencies_module = $this->getCurrency((int)$cart->id_currency);			
 			
@@ -269,13 +280,13 @@ class CryptoCurrency extends PaymentModule
 			<fieldset>
 			<legend><img src="../img/admin/contact.gif" />'.$this->l('Contact details').'</legend>
 				<table border="0" width="500" cellpadding="0" cellspacing="0" id="form">
-					<tr><td colspan="2">'.$this->l('Please specify the cryptocurrency wallet details for customers.').'.<br /><br /></td></tr>
+					<tr><td colspan="2">'.$this->l('Please specify the cryptocurrency wallet details for customers').'.<br /><br /></td></tr>
 					<tr><td width="130" style="height: 35px;">'.$this->l('Wallet owner').'</td><td><input type="text" name="owner" value="'.htmlentities(Tools::getValue('owner', $this->owner), ENT_COMPAT, 'UTF-8').'" style="width: 300px;" /></td></tr>
 					<tr>
 						<td width="130" style="vertical-align: top;">'.$this->l('Details').'</td>
 						<td style="padding-bottom:15px;">
 							<textarea name="details" rows="4" cols="53">'.htmlentities(Tools::getValue('details', $this->details), ENT_COMPAT, 'UTF-8').'</textarea>
-							<p>'.$this->l('Such as additional messages or instructions...').'</p>
+							<p class="clear">'.$this->l('Such as additional messages or instructions...').'</p>
 						</td>
 					</tr>';
 					
@@ -289,6 +300,22 @@ class CryptoCurrency extends PaymentModule
 					<tr><td colspan="2" align="center"><input class="button" name="btnSubmit" value="'.$this->l('Update settings').'" type="submit" /></td></tr>
 				</table>
 			</fieldset>
+			
+			<fieldset>			
+				<legend><img src="../img/admin/cog.gif" />'.$this->l('Conversion rate settings').'</legend>
+				<table border="0" width="500" cellpadding="0" cellspacing="0" id="form">
+					<tr><td colspan="2">'.$this->l('Please specify if this module should update automatically the conversion rates of your cryptocurrencies').'.<br /><br /></td></tr>
+					<tr>
+						<td width="130" style="vertical-align: top;">'.$this->l('Update Bitcoin conversion rate').'</td>
+						<td style="padding-bottom:15px;">
+							<input type="checkbox" name="update_btc" id="update_btc" value="1"'.((Configuration::get('CRYPTO_CURRENCY_UPDATE_BTC')) ? ' checked=""': '').'/>
+							<p class="clear">'.$this->l('Update will be performed on every page load when cart currency is Bitcoin using https://blockchain.info/ticker last conversion rates. Make sure the ISO code of Bitcoin in your Currencies tab is \'BTC\'').'.</p>
+						</td>
+					</tr>
+					<tr><td colspan="2" align="center"><input class="button" name="btnSubmit" value="'.$this->l('Update settings').'" type="submit" /></td></tr>
+				</table>			
+			</fieldset>			
+			
 			<fieldset class="fieldset-donate">
 				<legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Donate').'</legend>
 				<div>'.$this->l('If you like this module, please consider making a donation to support the author using Paypal, Bitcoin, Litecoin or Dogecoin').':</div> 
@@ -396,5 +423,49 @@ class CryptoCurrency extends PaymentModule
 				if ($currency_order->id == $currency_module['id_currency'])
 					return true;
 		return false;
+	}
+	
+	//update btc conversion rate if the user loads a page and has btc as current currency
+	public function hookHeader($params){
+		if(!Configuration::get('CRYPTO_CURRENCY_UPDATE_BTC')) return;
+		
+		$btc_code = 'BTC';
+		$cart_currency = $this->context->cart->id_currency;
+		
+		$btc_currency_id = Db::getInstance()->executeS('
+			SELECT `id_currency`
+			FROM `'._DB_PREFIX_.'currency`
+			WHERE `iso_code`=\''.$btc_code.'\'');
+		
+		if($btc_currency_id && $btc_currency_id[0]['id_currency']==$cart_currency){
+			//some code snippets taken from bitcointicker module
+			//print_r("updating...");
+			$default_currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+			$response = file_get_contents('https://blockchain.info/ticker');
+			$object = json_decode($response);
+			
+			if(is_object($object)){
+				$curr = $default_currency->iso_code;//'USD';
+				$rate = $object->$curr->{'last'};
+				$rate_default = 1.0/floatval($rate);
+				$rate_default_str = trim(sprintf("%.6f", $rate_default));
+				
+				//update conversion_rate on currency table
+				$query='UPDATE IGNORE `'._DB_PREFIX_.'currency` 
+					SET `conversion_rate` = \''.$rate_default_str.'\'
+					WHERE `iso_code` = \''.$btc_code.'\'';
+				
+				//print_r($query);
+				$return = Db::getInstance()->Execute($query);
+				
+				//update conversion_rate in currency_shop table too
+				$curr_id = strval($btc_currency_id[0]['id_currency']);
+				$query2='UPDATE IGNORE `'._DB_PREFIX_.'currency_shop` 
+					SET `conversion_rate` = \''.$rate_default_str.'\'
+					WHERE `id_currency`=\''.$curr_id.'\'';
+					
+				$return = Db::getInstance()->Execute($query2);
+			}
+		}
 	}
 }
