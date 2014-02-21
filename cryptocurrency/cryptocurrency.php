@@ -47,7 +47,7 @@ class CryptoCurrency extends PaymentModule
 	{
 		$this->name = 'cryptocurrency';
 		$this->tab = 'payments_gateways';
-		$this->version = '1.0.0'; //based on bankwire '0.6'
+		$this->version = '1.0.2'; //based on bankwire '0.6'
 		$this->author = 'PrestaShop & Victor Blanch';
 		
 		$this->currencies = true;
