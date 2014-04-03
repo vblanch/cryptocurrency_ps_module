@@ -59,7 +59,8 @@ class CryptoCurrency extends PaymentModule
 			'CRYPTO_CURRENCY_ADDRESS', 
 			'CRYPTO_CURRENCY_ID_CURRENCY', 
 			'CRYPTO_CURRENCY_NAME_CURRENCY', 
-			'CRYPTO_CURRENCY_UPDATE_BTC'));
+			'CRYPTO_CURRENCY_UPDATE_BTC',
+			'CRYPTO_CURRENCY_UPDATE_DOGE'));
 			
 		if (isset($config['CRYPTO_CURRENCY_OWNER']))
 			$this->owner = $config['CRYPTO_CURRENCY_OWNER'];
@@ -247,6 +248,7 @@ class CryptoCurrency extends PaymentModule
 			Configuration::updateValue('CRYPTO_CURRENCY_DETAILS', Tools::getValue('details'));
 			Configuration::updateValue('CRYPTO_CURRENCY_OWNER', Tools::getValue('owner'));			
 			Configuration::updateValue('CRYPTO_CURRENCY_UPDATE_BTC', Tools::getValue('update_btc'));
+			Configuration::updateValue('CRYPTO_CURRENCY_UPDATE_DOGE', Tools::getValue('update_doge'));
 			
 			$crypto_addresses = array();
 			$cart = $this->context->cart;
@@ -312,6 +314,13 @@ class CryptoCurrency extends PaymentModule
 							<p class="clear">'.$this->l('Update will be performed on every page load when cart currency is Bitcoin using https://blockchain.info/ticker last conversion rates. Make sure the ISO code of Bitcoin in your Currencies tab is \'BTC\'').'.</p>
 						</td>
 					</tr>
+					<tr>
+						<td width="130" style="vertical-align: top;">'.$this->l('Update Dogecoin conversion rate').'</td>
+						<td style="padding-bottom:15px;">
+							<input type="checkbox" name="update_doge" id="update_doge" value="1"'.((Configuration::get('CRYPTO_CURRENCY_UPDATE_DOGE')) ? ' checked=""': '').'/>
+							<p class="clear">'.$this->l('Update will be performed on every page load when cart currency is Dogecoin using http://coinmarketcap-nexuist.rhcloud.com/api/doge last conversion rates. Make sure the ISO code of Dogecoin in your Currencies tab is \'DOGE\'').'.</p>
+						</td>
+					</tr>					
 					<tr><td colspan="2" align="center"><input class="button" name="btnSubmit" value="'.$this->l('Update settings').'" type="submit" /></td></tr>
 				</table>			
 			</fieldset>			
@@ -427,45 +436,89 @@ class CryptoCurrency extends PaymentModule
 	
 	//update btc conversion rate if the user loads a page and has btc as current currency
 	public function hookHeader($params){
-		if(!Configuration::get('CRYPTO_CURRENCY_UPDATE_BTC')) return;
-		
-		$btc_code = 'BTC';
-		$cart_currency = $this->context->cart->id_currency;
-		
-		$btc_currency_id = Db::getInstance()->executeS('
-			SELECT `id_currency`
-			FROM `'._DB_PREFIX_.'currency`
-			WHERE `iso_code`=\''.$btc_code.'\'');
-		
-		if($btc_currency_id && $btc_currency_id[0]['id_currency']==$cart_currency){
-			//some code snippets taken from bitcointicker module
-			//print_r("updating...");
-			$default_currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
-			$response = file_get_contents('https://blockchain.info/ticker');
-			$object = json_decode($response);
+		if(Configuration::get('CRYPTO_CURRENCY_UPDATE_DOGE')){
+			$doge_code = 'DOGE';
+			$cart_currency = $this->context->cart->id_currency;
 			
-			if(is_object($object)){
-				$curr = $default_currency->iso_code;//'USD';
-				$rate = $object->$curr->{'last'};
-				$rate_default = 1.0/floatval($rate);
-				$rate_default_str = trim(sprintf("%.6f", $rate_default));
+			$doge_currency_id = Db::getInstance()->executeS('
+				SELECT `id_currency`
+				FROM `'._DB_PREFIX_.'currency`
+				WHERE `iso_code`=\''.$doge_code.'\'');
+			
+			if($doge_currency_id && $doge_currency_id[0]['id_currency']==$cart_currency){
+				//some code snippets taken from bitcointicker module
+				//print_r("updating...");
+				$default_currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+				$response = file_get_contents('http://coinmarketcap-nexuist.rhcloud.com/api/doge');
+				$object = json_decode($response);
 				
-				//update conversion_rate on currency table
-				$query='UPDATE IGNORE `'._DB_PREFIX_.'currency` 
-					SET `conversion_rate` = \''.$rate_default_str.'\'
-					WHERE `iso_code` = \''.$btc_code.'\'';
-				
-				//print_r($query);
-				$return = Db::getInstance()->Execute($query);
-				
-				//update conversion_rate in currency_shop table too
-				$curr_id = strval($btc_currency_id[0]['id_currency']);
-				$query2='UPDATE IGNORE `'._DB_PREFIX_.'currency_shop` 
-					SET `conversion_rate` = \''.$rate_default_str.'\'
-					WHERE `id_currency`=\''.$curr_id.'\'';
+				if(is_object($object)){
+					$curr = strtolower($default_currency->iso_code);//'USD';
+					//$rate = $object->$curr->{'last'};
+					$rate = $object->{'price'}->$curr;
+					$rate_default = 1.0/floatval($rate);
+					$rate_default_str = trim(sprintf("%.6f", $rate_default));
 					
-				$return = Db::getInstance()->Execute($query2);
+					//update conversion_rate on currency table
+					$query='UPDATE IGNORE `'._DB_PREFIX_.'currency` 
+						SET `conversion_rate` = \''.$rate_default_str.'\'
+						WHERE `iso_code` = \''.$doge_code.'\'';
+					
+					//print_r($query);
+					$return = Db::getInstance()->Execute($query);
+					
+					//update conversion_rate in currency_shop table too
+					$curr_id = strval($doge_currency_id[0]['id_currency']);
+					$query2='UPDATE IGNORE `'._DB_PREFIX_.'currency_shop` 
+						SET `conversion_rate` = \''.$rate_default_str.'\'
+						WHERE `id_currency`=\''.$curr_id.'\'';
+						
+					$return = Db::getInstance()->Execute($query2);
+				}
 			}
 		}
+
+		if(Configuration::get('CRYPTO_CURRENCY_UPDATE_BTC')){
+		
+			$btc_code = 'BTC';
+			$cart_currency = $this->context->cart->id_currency;
+			
+			$btc_currency_id = Db::getInstance()->executeS('
+				SELECT `id_currency`
+				FROM `'._DB_PREFIX_.'currency`
+				WHERE `iso_code`=\''.$btc_code.'\'');
+			
+			if($btc_currency_id && $btc_currency_id[0]['id_currency']==$cart_currency){
+				//some code snippets taken from bitcointicker module
+				//print_r("updating...");
+				$default_currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+				$response = file_get_contents('https://blockchain.info/ticker');
+				$object = json_decode($response);
+				
+				if(is_object($object)){
+					$curr = $default_currency->iso_code;//'USD';
+					$rate = $object->$curr->{'last'};
+					$rate_default = 1.0/floatval($rate);
+					$rate_default_str = trim(sprintf("%.6f", $rate_default));
+					
+					//update conversion_rate on currency table
+					$query='UPDATE IGNORE `'._DB_PREFIX_.'currency` 
+						SET `conversion_rate` = \''.$rate_default_str.'\'
+						WHERE `iso_code` = \''.$btc_code.'\'';
+					
+					//print_r($query);
+					$return = Db::getInstance()->Execute($query);
+					
+					//update conversion_rate in currency_shop table too
+					$curr_id = strval($btc_currency_id[0]['id_currency']);
+					$query2='UPDATE IGNORE `'._DB_PREFIX_.'currency_shop` 
+						SET `conversion_rate` = \''.$rate_default_str.'\'
+						WHERE `id_currency`=\''.$curr_id.'\'';
+						
+					$return = Db::getInstance()->Execute($query2);
+				}
+			}
+		}
+		return;
 	}
 }
