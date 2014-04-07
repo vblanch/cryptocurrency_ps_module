@@ -447,7 +447,6 @@ class CryptoCurrency extends PaymentModule
 			
 			if($doge_currency_id && $doge_currency_id[0]['id_currency']==$cart_currency){
 				//some code snippets taken from bitcointicker module
-				//print_r("updating...");
 				$default_currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
 				$response = file_get_contents('http://coinmarketcap-nexuist.rhcloud.com/api/doge');
 				$object = json_decode($response);

@@ -33,7 +33,8 @@ In order to activate this module to allow the payment with cryptocurrencies you 
 2. On the upper menu, click on Localization > Currencies
 
 3. Add as many cryptocurrencies as you want for your shop. Recommended ISO code for cryptocurrencies: 999.
-Also beware that some symbols for currencies won't display properly on the invoices.
+Also beware that some symbols for currencies won't display properly on the invoices. If you want to auto-update the 
+value of the currencies (Bitcoin and Dogecoin) you must set their ISO codes as BTC and DGE.
 
 4. Once you have your currencies, go to Modules > Payment.
 
@@ -45,6 +46,9 @@ Euro won't show up while paying with the cryptocurrency payment method).
 6. Go to Modules and search for the Cryptocurrency module. Click on Configure and fill the fields there. A wallet
 field will be displayed for every cryptocurrency created in step 3. Put there your wallet address, so it will be
 displayed on the payment process and inside the mail templates.
+
+6.1 Remember to check the checkboxes in the Configure screen if you want to auto-update your bitcoin and dogecoin
+values, and remember their ISO codes must be BTC and DGE respectively.
 
 7. (optional) If you are using any other language different from English (code: 'en'), you must translate and copy the files
 "cryptocurrency.txt" and "cryptocurrency.html" into your /mails/{code of your language} folder in order to be
